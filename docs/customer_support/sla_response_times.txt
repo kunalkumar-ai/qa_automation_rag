@@ -1,0 +1,23 @@
+ElectroTech Service Level Agreement: Response Time Commitments by Channel and Severity
+
+Effective Date: January 1, 2025  
+Policy Revision Number: 2.3  
+Contact: sla-support@electrotech.com  
+
+ElectroTech is committed to delivering exceptional service and support to our customers. This document outlines the response time commitments by channel and severity for our product lines, including ET-X200, ET-X300, ET-S100, and ET-P50. Our service level agreement (SLA) aims to ensure prompt and efficient resolution of issues, fostering customer satisfaction and loyalty.
+
+Our response time commitments are categorized by the severity of the issue and the channel through which the support request is received. Severity levels are defined as follows:
+
+1. **Critical (Severity 1):** Issues causing complete system failure or significant impact on operations, requiring immediate attention. For such issues reported via our dedicated 24/7 support hotline, we commit to a response time of 30 minutes. For emails sent to emergency-support@electrotech.com, response will be within one hour.
+
+2. **High (Severity 2):** Issues severely impacting system performance but not resulting in total failure. These cases, when communicated through our online support portal, will receive a response within two hours. Email submissions to high-priority@electrotech.com will be addressed within four hours.
+
+3. **Medium (Severity 3):** Issues causing moderate disruptions which are not critical to operations. We aim to respond within four hours for requests submitted through our support portal and within eight hours for those sent to medium-support@electrotech.com.
+
+4. **Low (Severity 4):** Minor issues or requests for information. Our commitment is to respond within 24 hours for all channels, including our general support email, support@electrotech.com.
+
+The measurement method for these response times involves tracking the time elapsed from the receipt of a support request to the initial contact made by our support team. This is facilitated by our ticketing system, which logs the exact time a request is received and the time our support representative initiates their response.
+
+Certain exclusions apply to this SLA. Response times may be affected during instances of force majeure, including natural disasters or widespread internet outages, as well as during scheduled maintenance periods which will be communicated to all clients at least 48 hours in advance. Additionally, incomplete or inaccurate information provided during the initial request may affect response times, as our team may require additional clarification before proceeding.
+
+ElectroTech is dedicated to continuously improving our service processes, and we welcome feedback from our clients. Any questions or concerns regarding this SLA can be directed to sla-support@electrotech.com. We value your partnership and are committed to maintaining the highest standards of support for all our products and services.

@@ -1,0 +1,32 @@
+Date: January 15, 2025
+
+To: All ElectroTech Customers and Partners
+
+Subject: ElectroTech Firmware Update Policy
+
+ElectroTech is committed to providing our customers with the highest quality products and services. As part of this commitment, we have established a comprehensive firmware update policy to ensure that all our devices operate efficiently and securely. This document outlines our firmware update policy, including supported models, update frequency, update procedures, and the end-of-life schedule.
+
+ElectroTech's firmware updates apply to the following models: ET-X200, ET-X300, ET-S100, and ET-P50. These models are equipped with advanced technology designed to meet the rigorous demands of today's market. Our firmware updates are essential to maintaining optimal performance, enhancing security features, and introducing new functionalities.
+
+The firmware update frequency for all supported models is biannual. Updates are scheduled to be released in May and November each year. This schedule allows us to incorporate the latest technological advancements and address any emerging security issues promptly. In exceptional circumstances where critical vulnerabilities are identified, ElectroTech reserves the right to issue additional updates outside the regular schedule.
+
+To update the firmware on your ElectroTech device, please follow these steps:
+
+1. Ensure your device is connected to a stable internet connection.
+2. Navigate to the 'Settings' menu on your device.
+3. Select 'System Updates.'
+4. Follow the on-screen instructions to download and install the latest firmware update.
+
+It is crucial to ensure that your device remains connected to the power supply throughout the update process to prevent any interruptions.
+
+ElectroTech is committed to supporting each model for a period of five years following its initial release. After this period, devices will enter the end-of-life phase. For instance, the ET-X200, released in March 2021, will continue to receive updates until March 2026. Post end-of-life, ElectroTech will cease the provision of firmware updates, and customers are encouraged to upgrade to newer models to benefit from the latest technology and enhanced security features.
+
+We recognize the importance of maintaining up-to-date devices and are dedicated to providing our customers with clear and efficient support. If you have any questions or require further assistance, please do not hesitate to contact our customer service team at support@electrotech.com.
+
+We thank you for your continued trust and partnership with ElectroTech and are committed to ensuring your satisfaction with our products.
+
+Sincerely,
+
+[Your Name]
+Director of Product Management
+ElectroTech Corporation

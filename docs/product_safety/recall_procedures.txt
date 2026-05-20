@@ -1,0 +1,25 @@
+To: All ElectroTech Staff
+
+Subject: Product Recall Process Overview
+
+Date: January 10, 2025
+
+As part of our ongoing commitment to maintaining the highest standards of safety and quality, ElectroTech has established a comprehensive product recall process. This document outlines the procedures to be followed in the event of a product recall, including customer notification, return instructions, replacement timelines, and RAPEX reporting.
+
+When a product recall is initiated, our primary objective is to ensure the swift and efficient communication with all affected customers. Upon identification of a recall-worthy issue, an official notification will be sent to customers who purchased the affected models, which may include the ET-X200, ET-X300, ET-S100, and ET-P50, depending on the particular circumstances of the recall. Notifications are dispatched via multiple channels: email, postal mail, and, where applicable, SMS alerts. Customers will receive detailed information on the nature of the defect, potential hazards, and immediate actions to be taken.
+
+The notification will also include clear return instructions. Affected customers will be guided to visit the ElectroTech website, where they can access our dedicated recall section. Here, they will find printable shipping labels and instructions for returning the product without incurring any costs. Alternatively, customers may contact our support team at returns@electrotech.com for assistance or further clarifications.
+
+In terms of replacement timelines, once the defective product is received, ElectroTech aims to expedite the process to minimize inconvenience. Typically, replacements or repairs will be completed within four to six weeks from the date the product is received at our facilities. Customers will be kept informed of their product’s status through regular updates via email.
+
+In adherence to European safety regulations, ElectroTech is committed to full compliance with the RAPEX (Rapid Exchange of Information System) protocol. As per the requirements outlined in Regulation (EC) No 765/2008, our compliance team will submit all necessary documentation and information to RAPEX promptly. This includes details of the recall, the number of units affected, and any reported incidents. Our continuous engagement with RAPEX ensures that ElectroTech upholds its responsibility for consumer safety across all markets.
+
+We urge all staff to familiarize themselves with this process to ensure a seamless execution should a recall be necessary. For any questions or additional information regarding our recall procedures, please contact the regulatory compliance team at compliance@electrotech.com.
+
+Thank you for your attention to this important matter.
+
+Sincerely,
+
+John Smith  
+Director of Product Safety  
+ElectroTech Manufacturing
