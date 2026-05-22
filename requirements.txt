@@ -1,5 +1,9 @@
-openai>=1.30.0
-chromadb>=0.5.0
-gradio>=4.0.0
-python-dotenv>=1.0.0
-pytest>=8.0.0
+openai
+chromadb
+rank-bm25
+sentence-transformers
+ragas>=0.1.0,<0.2.0
+datasets
+pdfplumber
+pytest
+python-dotenv
