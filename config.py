@@ -25,3 +25,4 @@ TOP_K_BM25 = 20
 TOP_K_RERANK = 5
 RRF_K = 60
 GENERATION_TEMPERATURE = 0.3
+MAX_CONTEXT_CHARS = 3000  # max chars per parent section sent to GPT-4o

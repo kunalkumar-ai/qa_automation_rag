@@ -1,5 +1,5 @@
 from openai import OpenAI
-from config import OPENAI_API_KEY, GENERATION_MODEL, GENERATION_TEMPERATURE
+from config import OPENAI_API_KEY, GENERATION_MODEL, GENERATION_TEMPERATURE, MAX_CONTEXT_CHARS
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -16,7 +16,8 @@ def generate_answer(question: str, context_chunks: list[str]) -> str:
     if not context_chunks:
         return "No relevant context found to answer this question."
 
-    context = "\n\n---\n\n".join(context_chunks)
+    truncated = [chunk[:MAX_CONTEXT_CHARS] for chunk in context_chunks]
+    context = "\n\n---\n\n".join(truncated)
     user_message = f"Context:\n{context}\n\nQuestion: {question}\n\nAnswer:"
 
     response = client.chat.completions.create(
