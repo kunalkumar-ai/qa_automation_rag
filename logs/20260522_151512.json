@@ -1,0 +1,18 @@
+{
+  "question": "What is Tesla revenue?",
+  "top_child_chunks": [
+    {
+      "dense_score": 0.91,
+      "bm25_score": 5.2,
+      "reranker_score": 0.87,
+      "section_name": "ITEM 7. MD&A",
+      "text": "Total revenues were 97.69 billion in 2024."
+    }
+  ],
+  "answer": "Tesla revenue in 2024 was $97.69 billion.",
+  "ragas": {
+    "faithfulness": 0.95,
+    "answer_correctness": 0.88,
+    "context_recall": 0.75
+  }
+}
