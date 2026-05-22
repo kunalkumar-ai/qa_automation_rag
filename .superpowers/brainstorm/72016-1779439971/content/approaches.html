@@ -1,0 +1,50 @@
+<h2>Three RAG Architecture Approaches</h2>
+<p class="subtitle">Each solves the chunking + retrieval problem differently. Which fits a learning project best?</p>
+
+<div class="options">
+
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Better Baseline RAG</h3>
+      <p><strong>What changes from current:</strong> Paragraph-aware chunking (respects sentence boundaries) + dense embeddings + RAGAS evaluation added.</p>
+      <p><strong>Pipeline:</strong> Question → Paragraph chunks → Dense retrieval (top-5) → GPT-4o answer → RAGAS score</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Simple to build and understand</li><li>Good learning baseline to measure from</li><li>Fast to implement</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Still misses context for hard questions</li><li>No keyword search — misses exact terms like "$97.69 billion"</li><li>Too simple to expose interesting RAG problems</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Hierarchical + Hybrid RAG ⭐ Recommended</h3>
+      <p><strong>What changes from current:</strong> Two-level chunking (small for retrieval, large for context) + hybrid search (embeddings + BM25 keyword) + reranker + RAGAS evaluation.</p>
+      <p><strong>Pipeline:</strong> Question → Hybrid search (dense + BM25) → top-20 candidates → Reranker → top-5 → Parent chunk lookup → GPT-4o answer → RAGAS score</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Solves both problems you identified</li><li>Each component teaches one RAG concept</li><li>Modern production-grade pattern</li><li>RAGAS shows impact of each improvement</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More components to understand</li><li>Harder to debug when something goes wrong</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Agentic RAG</h3>
+      <p><strong>What changes from current:</strong> LLM decides what to retrieve and when. Multi-step retrieval — it can ask follow-up questions to itself before answering.</p>
+      <p><strong>Pipeline:</strong> Question → LLM decides retrieval strategy → retrieve → LLM checks if context is enough → retrieve more if needed → answer</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Handles complex multi-hop questions naturally</li><li>Most powerful for hard reasoning</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Non-deterministic — hard to measure what improved</li><li>Very complex to debug</li><li>Overkill before you understand the basics</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:2rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #4A90D9;">
+  <p class="label">Why B is recommended for learning</p>
+  <p>Option B is the only one where you can <strong>turn each component on/off and measure the difference</strong>. Add BM25 → measure. Add reranker → measure. Each step teaches you exactly what that component contributes. That's the learning loop we designed from the start.</p>
+</div>

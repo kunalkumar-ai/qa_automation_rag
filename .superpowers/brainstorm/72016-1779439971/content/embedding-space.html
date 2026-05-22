@@ -1,0 +1,65 @@
+<h2>How Embeddings Find Answers to Questions</h2>
+<p class="subtitle">And why this sometimes fails — the most important RAG concept to understand</p>
+
+<div class="section">
+  <h3>What "vector space" actually means</h3>
+  <p>Think of each embedding as a point in space. Texts with similar meaning are placed close together. The embedding model was trained on billions of sentences to learn this — it knows that "revenue" and "sales income" mean similar things, so they end up near each other.</p>
+
+  <div style="background:#f8f9fa; border-radius:12px; padding:2rem; margin-top:1rem; position:relative; height:320px; overflow:hidden; border: 1px solid #dee2e6;">
+
+    <!-- Axes -->
+    <div style="position:absolute; bottom:20px; left:20px; right:20px; height:1px; background:#ccc"></div>
+    <div style="position:absolute; bottom:20px; left:20px; top:20px; width:1px; background:#ccc"></div>
+    <p style="position:absolute; bottom:4px; right:20px; font-size:0.7em; color:#999">meaning dimension 1 →</p>
+    <p style="position:absolute; top:4px; left:24px; font-size:0.7em; color:#999">↑ meaning dimension 2</p>
+
+    <!-- Financial cluster -->
+    <div style="position:absolute; left:55%; top:15%; width:200px; height:160px; border:2px dashed #4A90D9; border-radius:50%; background:rgba(74,144,217,0.05)"></div>
+    <p style="position:absolute; left:68%; top:12%; font-size:0.75em; color:#4A90D9; font-weight:bold">Financial meaning cluster</p>
+
+    <!-- Question point -->
+    <div style="position:absolute; left:62%; top:35%; width:14px; height:14px; background:#E85D04; border-radius:50%; transform:translate(-50%,-50%); box-shadow: 0 0 0 4px rgba(232,93,4,0.2)"></div>
+    <p style="position:absolute; left:64%; top:28%; font-size:0.75em; color:#E85D04; max-width:130px">"What was Tesla's revenue in 2024?"</p>
+
+    <!-- Chunk answer point — close -->
+    <div style="position:absolute; left:70%; top:48%; width:14px; height:14px; background:#2E8B57; border-radius:50%; transform:translate(-50%,-50%)"></div>
+    <p style="position:absolute; left:72%; top:44%; font-size:0.75em; color:#2E8B57; max-width:150px">"Total revenues $97,690 million in 2024" ✓ Close!</p>
+
+    <!-- Chunk answer point — slightly further -->
+    <div style="position:absolute; left:58%; top:55%; width:12px; height:12px; background:#7B68EE; border-radius:50%; transform:translate(-50%,-50%)"></div>
+    <p style="position:absolute; left:34%; top:52%; font-size:0.75em; color:#7B68EE; max-width:140px">"Automotive sales were $72.48B..." ✓ Nearby</p>
+
+    <!-- Distance line -->
+    <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none">
+      <line x1="62%" y1="35%" x2="70%" y2="48%" stroke="#E85D04" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.6"/>
+      <text x="67%" y="38%" font-size="11" fill="#E85D04" opacity="0.8">small distance</text>
+    </svg>
+
+    <!-- Risk cluster -->
+    <div style="position:absolute; left:15%; top:20%; width:160px; height:130px; border:2px dashed #C77DFF; border-radius:50%; background:rgba(199,125,255,0.05)"></div>
+    <p style="position:absolute; left:18%; top:17%; font-size:0.75em; color:#C77DFF; font-weight:bold">Risk meaning cluster</p>
+
+    <div style="position:absolute; left:25%; top:38%; width:12px; height:12px; background:#C77DFF; border-radius:50%; transform:translate(-50%,-50%)"></div>
+    <p style="position:absolute; left:27%; top:34%; font-size:0.75em; color:#C77DFF; max-width:130px">"supply chain risk..." far away</p>
+
+    <!-- Distance line to risk -->
+    <svg style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none">
+      <line x1="62%" y1="35%" x2="25%" y2="38%" stroke="#999" stroke-width="1" stroke-dasharray="4,3" opacity="0.4"/>
+      <text x="40%" y="33%" font-size="11" fill="#999" opacity="0.8">large distance → not retrieved</text>
+    </svg>
+
+  </div>
+</div>
+
+<div class="section" style="margin-top:1.5rem">
+  <h3>Why questions and answers end up near each other</h3>
+  <p>Embedding models like OpenAI's <code>text-embedding-3-small</code> were trained on massive datasets that include Q&A pairs. They learned that <em>"What is the revenue?"</em> and <em>"Revenue was $97 billion"</em> are semantically related — they capture the same concept from different angles.</p>
+  <p style="margin-top:0.5rem">The model doesn't match words. It matches <strong>meaning</strong>. "Revenue", "total sales", "income from operations" all land near each other in vector space.</p>
+</div>
+
+<div style="padding:1rem; background:#fff3cd; border-radius:8px; border-left:4px solid #F4A261; margin-top:1rem">
+  <p class="label">But here's the problem — and why it sometimes fails</p>
+  <p>The question <em>"What was Tesla's revenue?"</em> and the chunk <em>"Total revenues $97,690 million"</em> are semantically close — but not identical. The embedding model bridges this gap most of the time.</p>
+  <p style="margin-top:0.5rem"><strong>Where it breaks:</strong> exact numbers, specific names, ticker symbols. If you ask <em>"What was TSLA's FY24 top-line?"</em> — financial jargon the model wasn't trained to associate with "revenue" — the embeddings drift apart and the right chunk might NOT be retrieved.</p>
+  <p style="margin-top:0.5rem">This is exactly why we add <strong>BM25 keyword search</strong> alongside embeddings. BM25 does exact word matching — it would find "revenue" and "2024" regardless of semantic drift. Hybrid search = semantic + keyword. Best of both.</p>
+</div>

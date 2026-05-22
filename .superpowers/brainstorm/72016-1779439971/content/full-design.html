@@ -1,0 +1,63 @@
+<h2>Complete System Design — Ready for Approval</h2>
+<p class="subtitle">Every decision documented with its "why". Review before we write the spec.</p>
+
+<!-- Files -->
+<div class="section" style="background:#f0f4ff; border-radius:10px; padding:1.2rem; margin-bottom:1rem; border-left:4px solid #4A90D9">
+  <h3 style="color:#4A90D9">Files We Will Build</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:0.85em; margin-top:0.5rem">
+    <tr style="background:#e0eaff">
+      <th style="padding:0.4rem 0.8rem; text-align:left">File</th>
+      <th style="padding:0.4rem 0.8rem; text-align:left">Responsibility</th>
+    </tr>
+    <tr><td style="padding:0.4rem 0.8rem"><code>config.py</code></td><td style="padding:0.4rem 0.8rem">All constants — model names, paths, chunk sizes, top-k values</td></tr>
+    <tr style="background:#f0f4ff"><td style="padding:0.4rem 0.8rem"><code>chunker.py</code></td><td style="padding:0.4rem 0.8rem">Hierarchical chunking — splits 10-K into parent sections + child paragraphs, stores parent_id on each child</td></tr>
+    <tr><td style="padding:0.4rem 0.8rem"><code>ingest.py</code></td><td style="padding:0.4rem 0.8rem">One-time script: chunk → embed child chunks → store in ChromaDB → build + save BM25 index</td></tr>
+    <tr style="background:#f0f4ff"><td style="padding:0.4rem 0.8rem"><code>retriever.py</code></td><td style="padding:0.4rem 0.8rem">Hybrid search: dense (ChromaDB) + sparse (BM25) → merge via RRF → rerank → parent lookup</td></tr>
+    <tr><td style="padding:0.4rem 0.8rem"><code>generator.py</code></td><td style="padding:0.4rem 0.8rem">GPT-4o call with question + retrieved parent chunks → answer</td></tr>
+    <tr style="background:#f0f4ff"><td style="padding:0.4rem 0.8rem"><code>evaluator.py</code></td><td style="padding:0.4rem 0.8rem">RAGAS scoring — retrieval recall, faithfulness, answer correctness against golden dataset</td></tr>
+    <tr><td style="padding:0.4rem 0.8rem"><code>logger.py</code></td><td style="padding:0.4rem 0.8rem">Two-level logging — console (human-readable) + JSON file (full trace per query)</td></tr>
+    <tr style="background:#f0f4ff"><td style="padding:0.4rem 0.8rem"><code>query.py</code></td><td style="padding:0.4rem 0.8rem">Entry point — wires all components together, run with: <code>python3 query.py "your question"</code></td></tr>
+    <tr><td style="padding:0.4rem 0.8rem"><code>logs/</code></td><td style="padding:0.4rem 0.8rem">JSON log files, one per query run, named by timestamp</td></tr>
+  </table>
+</div>
+
+<!-- Pipeline -->
+<div class="section" style="background:#fff8f0; border-radius:10px; padding:1.2rem; margin-bottom:1rem; border-left:4px solid #E85D04">
+  <h3 style="color:#E85D04">Full Query Pipeline</h3>
+  <div style="font-family:monospace; font-size:0.85em; background:#fff; padding:1rem; border-radius:6px; margin-top:0.5rem; line-height:2">
+    python3 query.py "What was Tesla's revenue in 2024?"<br>
+    &nbsp;&nbsp;→ <span style="color:#7B68EE">Dense search</span>: ChromaDB top-20 by cosine similarity<br>
+    &nbsp;&nbsp;→ <span style="color:#E85D04">BM25 search</span>: keyword match top-20<br>
+    &nbsp;&nbsp;→ <span style="color:#F4A261">RRF merge</span>: combine both lists → 40 candidates<br>
+    &nbsp;&nbsp;→ <span style="color:#C77DFF">Reranker</span>: cross-encoder scores all 40 → keeps top-5<br>
+    &nbsp;&nbsp;→ <span style="color:#2E8B57">Parent lookup</span>: swap child chunks → full parent sections<br>
+    &nbsp;&nbsp;→ <span style="color:#333">GPT-4o</span>: question + 5 parent sections → answer<br>
+    &nbsp;&nbsp;→ <span style="color:#4A90D9">RAGAS</span>: score retrieval + faithfulness + correctness<br>
+    &nbsp;&nbsp;→ <span style="color:#666">Logger</span>: print to console + write full trace to logs/
+  </div>
+</div>
+
+<!-- Decisions -->
+<div class="section" style="background:#f0fff4; border-radius:10px; padding:1.2rem; margin-bottom:1rem; border-left:4px solid #2E8B57">
+  <h3 style="color:#2E8B57">All Decisions + Why</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:0.82em; margin-top:0.5rem">
+    <tr style="background:#d4edda">
+      <th style="padding:0.4rem 0.8rem; text-align:left">Decision</th>
+      <th style="padding:0.4rem 0.8rem; text-align:left">Why</th>
+    </tr>
+    <tr><td style="padding:0.4rem 0.8rem">Hierarchical chunking</td><td style="padding:0.4rem 0.8rem">Word-count chunking splits mid-sentence and merges different sections. Paragraph-level child chunks preserve meaning; section-level parent chunks preserve context.</td></tr>
+    <tr style="background:#f0fff4"><td style="padding:0.4rem 0.8rem">BM25 hybrid search</td><td style="padding:0.4rem 0.8rem">Embeddings miss exact terms (numbers, abbreviations). BM25 misses paraphrase. Together they cover both failure modes.</td></tr>
+    <tr><td style="padding:0.4rem 0.8rem">Reciprocal Rank Fusion</td><td style="padding:0.4rem 0.8rem">Merging dense + sparse lists without needing to tune score thresholds. Works by rank position, not raw scores.</td></tr>
+    <tr style="background:#f0fff4"><td style="padding:0.4rem 0.8rem">Local cross-encoder reranker</td><td style="padding:0.4rem 0.8rem">Similarity measures shape of meaning. Reranker reads question + chunk together and scores actual answer relevance. Free, local, inspectable.</td></tr>
+    <tr><td style="padding:0.4rem 0.8rem">Parent lookup</td><td style="padding:0.4rem 0.8rem">Retrieve small (precise match), pass large (full context). Child chunks are precise enough to find; parent sections are rich enough for GPT-4o to reason over.</td></tr>
+    <tr style="background:#f0fff4"><td style="padding:0.4rem 0.8rem">Terminal script, no UI</td><td style="padding:0.4rem 0.8rem">A UI hides scores and internals. Terminal output exposes every score at every step — essential for learning what each component contributes.</td></tr>
+    <tr><td style="padding:0.4rem 0.8rem">Console + JSON logging</td><td style="padding:0.4rem 0.8rem">Console for immediate human feedback. JSON for querying across runs later — "which questions had low retrieval scores?"</td></tr>
+    <tr style="background:#f0fff4"><td style="padding:0.4rem 0.8rem">RAGAS evaluation</td><td style="padding:0.4rem 0.8rem">Without measurement we can't know if a change helped. Three independent scores expose exactly which layer failed: retrieval, faithfulness, or correctness.</td></tr>
+  </table>
+</div>
+
+<!-- Learning loop -->
+<div style="padding:1rem; background:#fffbe6; border-radius:8px; border-left:4px solid #F4A261">
+  <p class="label">The learning loop this enables</p>
+  <p>Run all 20 golden dataset questions → get RAGAS scores → pick the lowest-scoring question → read its JSON log → see exactly which component failed → change that one thing → run again → compare scores. Every improvement is measurable. Every failure is diagnosable.</p>
+</div>

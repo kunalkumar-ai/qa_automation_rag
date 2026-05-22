@@ -1,0 +1,101 @@
+<h2>How RAG Actually Works — From Document to Answer</h2>
+<p class="subtitle">Two phases: Ingestion (happens once) and Retrieval (happens every question)</p>
+
+<div class="section">
+  <h3 style="color:#4A90D9">PHASE 1 — Ingestion (done once when you set up the system)</h3>
+
+  <div style="display:flex; flex-direction:column; gap:1rem; margin-top:1rem;">
+
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <div style="background:#4A90D9; color:white; border-radius:8px; padding:1rem 1.5rem; min-width:140px; text-align:center; font-weight:bold;">📄 Full Document<br><small style="font-weight:normal">473K characters<br>Tesla 10-K</small></div>
+      <div style="font-size:2rem; color:#999">→</div>
+      <div style="background:#f0f4ff; border:2px solid #4A90D9; border-radius:8px; padding:1rem; flex:1">
+        <strong>Step 1: Chunking</strong><br>
+        Break the document into smaller pieces.<br>
+        <em>Why?</em> Embeddings work poorly on very long text. LLMs have token limits. You need small pieces to find the right one.
+        <div style="margin-top:0.5rem; font-family:monospace; font-size:0.85em; background:#fff; padding:0.5rem; border-radius:4px">
+          Chunk 1: "Tesla's mission is to accelerate..."<br>
+          Chunk 2: "We operate as two segments: automotive..."<br>
+          Chunk 3: "Total revenues were $97.69 billion..."<br>
+          Chunk 4: "Risk: supply chain disruptions may..."<br>
+          ... (hundreds more chunks)
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <div style="background:#7B68EE; color:white; border-radius:8px; padding:1rem 1.5rem; min-width:140px; text-align:center; font-weight:bold;">🔢 Numbers<br><small style="font-weight:normal">Each chunk becomes<br>1536 numbers</small></div>
+      <div style="font-size:2rem; color:#999">→</div>
+      <div style="background:#f0f0ff; border:2px solid #7B68EE; border-radius:8px; padding:1rem; flex:1">
+        <strong>Step 2: Embedding</strong><br>
+        Convert each chunk into a list of numbers (a "vector"). Similar meaning = similar numbers.<br>
+        <em>Why numbers?</em> You can't do math on words. But you CAN find the closest numbers to other numbers — that's how similarity search works.
+        <div style="margin-top:0.5rem; font-family:monospace; font-size:0.85em; background:#fff; padding:0.5rem; border-radius:4px">
+          "Tesla's mission..." → [0.12, -0.34, 0.87, 0.02, ...]<br>
+          "revenue $97 billion..." → [0.45, 0.11, -0.22, 0.91, ...]<br>
+          "supply chain risk..." → [0.33, -0.71, 0.15, -0.44, ...]
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <div style="background:#2E8B57; color:white; border-radius:8px; padding:1rem 1.5rem; min-width:140px; text-align:center; font-weight:bold;">🗄️ ChromaDB<br><small style="font-weight:normal">Stores all vectors<br>+ original text</small></div>
+      <div style="font-size:2rem; color:#999">→</div>
+      <div style="background:#f0fff4; border:2px solid #2E8B57; border-radius:8px; padding:1rem; flex:1">
+        <strong>Step 3: Store in Vector Database</strong><br>
+        ChromaDB stores each chunk's: original text + its vector + metadata (which section it came from).<br>
+        <em>Why store both?</em> You search by vector (numbers) but you retrieve the original text to give to the LLM.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<hr style="margin: 2rem 0; border-color: #eee"/>
+
+<div class="section">
+  <h3 style="color:#E85D04">PHASE 2 — Retrieval (happens every time a question is asked)</h3>
+
+  <div style="display:flex; flex-direction:column; gap:1rem; margin-top:1rem;">
+
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <div style="background:#E85D04; color:white; border-radius:8px; padding:1rem 1.5rem; min-width:140px; text-align:center; font-weight:bold;">❓ Question<br><small style="font-weight:normal">"What was Tesla's<br>revenue in 2024?"</small></div>
+      <div style="font-size:2rem; color:#999">→</div>
+      <div style="background:#fff8f0; border:2px solid #E85D04; border-radius:8px; padding:1rem; flex:1">
+        <strong>Step 4: Embed the Question</strong><br>
+        The question gets converted to a vector using the SAME embedding model.<br>
+        <em>Key insight:</em> Questions and answers that mean similar things get similar vectors — even if the exact words are different.
+        <div style="margin-top:0.5rem; font-family:monospace; font-size:0.85em; background:#fff; padding:0.5rem; border-radius:4px">
+          "What was Tesla's revenue?" → [0.41, 0.09, -0.19, 0.88, ...]
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <div style="background:#C77DFF; color:white; border-radius:8px; padding:1rem 1.5rem; min-width:140px; text-align:center; font-weight:bold;">🔍 Search<br><small style="font-weight:normal">Find closest<br>vectors</small></div>
+      <div style="font-size:2rem; color:#999">→</div>
+      <div style="background:#fdf0ff; border:2px solid #C77DFF; border-radius:8px; padding:1rem; flex:1">
+        <strong>Step 5: Similarity Search in ChromaDB</strong><br>
+        ChromaDB finds the chunks whose vectors are CLOSEST to the question vector. "Closest" = most similar meaning.<br>
+        <em>This is where chunking quality matters most.</em> If the revenue info was split across two chunks, neither chunk is a perfect match.
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <div style="background:#333; color:white; border-radius:8px; padding:1rem 1.5rem; min-width:140px; text-align:center; font-weight:bold;">🤖 LLM<br><small style="font-weight:normal">GPT-4o reads<br>chunks + answers</small></div>
+      <div style="font-size:2rem; color:#999">→</div>
+      <div style="background:#f8f8f8; border:2px solid #333; border-radius:8px; padding:1rem; flex:1">
+        <strong>Step 6: Generate Answer</strong><br>
+        The top retrieved chunks + original question are sent to GPT-4o.<br>
+        GPT-4o reads only those chunks (not the whole document) and generates an answer.<br>
+        <em>If the wrong chunks were retrieved, the answer will be wrong or hallucinated — no matter how smart the LLM is.</em>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="margin-top:2rem; padding:1rem; background:#fffbe6; border-radius:8px; border-left:4px solid #F4A261;">
+  <p class="label">The key thing to remember</p>
+  <p><strong>Retrieval quality limits everything.</strong> The LLM can only work with what it's given. A bad chunk = a bad answer, even with GPT-4o. This is why chunking strategy is the most important architectural decision.</p>
+</div>

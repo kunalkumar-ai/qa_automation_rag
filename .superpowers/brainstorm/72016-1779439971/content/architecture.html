@@ -1,0 +1,150 @@
+<h2>Hierarchical + Hybrid RAG — Full Architecture</h2>
+<p class="subtitle">Two phases: Ingestion (once) and Query (every question). Follow the arrows.</p>
+
+<!-- INGESTION PHASE -->
+<div style="background:#f0f4ff; border-radius:12px; padding:1.5rem; margin-bottom:1.5rem; border:2px solid #4A90D9">
+  <h3 style="color:#4A90D9; margin-bottom:1rem">📥 INGESTION PHASE — runs once to prepare the system</h3>
+
+  <div style="display:flex; align-items:stretch; gap:0.75rem; flex-wrap:nowrap; overflow-x:auto">
+
+    <div style="background:white; border-radius:8px; padding:0.75rem; min-width:120px; text-align:center; border:1px solid #cce0ff">
+      <div style="font-size:1.5rem">📄</div>
+      <strong>Tesla 10-K</strong><br>
+      <small>tsla-10k-2024.txt<br>473K chars</small>
+    </div>
+
+    <div style="display:flex; align-items:center; font-size:1.5rem; color:#4A90D9">→</div>
+
+    <div style="background:white; border-radius:8px; padding:0.75rem; min-width:150px; border:2px solid #4A90D9">
+      <div style="font-size:1rem">✂️ <strong>Hierarchical Chunker</strong></div>
+      <small>Splits by section structure, not word count</small>
+      <div style="margin-top:0.5rem; font-size:0.75em; background:#f0f4ff; padding:0.4rem; border-radius:4px">
+        <strong>Parent chunk</strong> = full section<br>(e.g. entire MD&A ~500 words)<br><br>
+        <strong>Child chunk</strong> = one paragraph<br>(e.g. "Revenue was $97B..." ~80 words)<br><br>
+        Child stores reference → its Parent
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; font-size:1.5rem; color:#4A90D9">→</div>
+
+    <div style="display:flex; flex-direction:column; gap:0.5rem; min-width:160px">
+      <div style="background:white; border-radius:8px; padding:0.75rem; border:2px solid #7B68EE; flex:1">
+        <div style="font-size:0.9rem">🔢 <strong>Embed child chunks</strong></div>
+        <small>OpenAI text-embedding-3-small<br>Each chunk → 1536 numbers</small>
+      </div>
+      <div style="background:white; border-radius:8px; padding:0.75rem; border:2px solid #E85D04; flex:1">
+        <div style="font-size:0.9rem">🔑 <strong>BM25 Index</strong></div>
+        <small>Keyword index on same child chunks<br>No embeddings — exact word matching</small>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; font-size:1.5rem; color:#4A90D9">→</div>
+
+    <div style="display:flex; flex-direction:column; gap:0.5rem; min-width:140px">
+      <div style="background:white; border-radius:8px; padding:0.75rem; border:2px solid #7B68EE; flex:1; text-align:center">
+        <div style="font-size:1.2rem">🗄️</div>
+        <strong>ChromaDB</strong><br>
+        <small>Stores vectors<br>+ original text<br>+ parent_id metadata</small>
+      </div>
+      <div style="background:white; border-radius:8px; padding:0.75rem; border:2px solid #E85D04; flex:1; text-align:center">
+        <div style="font-size:1.2rem">📋</div>
+        <strong>BM25 Index</strong><br>
+        <small>Saved to disk<br>as .pkl file</small>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- QUERY PHASE -->
+<div style="background:#fff8f0; border-radius:12px; padding:1.5rem; border:2px solid #E85D04">
+  <h3 style="color:#E85D04; margin-bottom:1rem">🔍 QUERY PHASE — runs every time a question is asked</h3>
+
+  <!-- Row 1: Question + two searches -->
+  <div style="display:flex; align-items:stretch; gap:0.75rem; margin-bottom:0.75rem; flex-wrap:nowrap; overflow-x:auto">
+
+    <div style="background:white; border-radius:8px; padding:0.75rem; min-width:130px; text-align:center; border:2px solid #E85D04">
+      <div style="font-size:1.5rem">❓</div>
+      <strong>Question</strong><br>
+      <small style="color:#666">"What was Tesla's revenue in 2024?"</small>
+    </div>
+
+    <div style="display:flex; align-items:center; font-size:1.5rem; color:#E85D04">→</div>
+
+    <div style="display:flex; flex-direction:column; gap:0.5rem; min-width:170px">
+      <div style="background:white; border-radius:8px; padding:0.75rem; border:2px solid #7B68EE; flex:1">
+        <strong style="font-size:0.85rem">🔢 Dense Search</strong><br>
+        <small>Embed question → search ChromaDB by vector similarity → top 20 chunks</small><br>
+        <small style="color:#7B68EE">Good for: meaning & paraphrase</small>
+      </div>
+      <div style="background:white; border-radius:8px; padding:0.75rem; border:2px solid #E85D04; flex:1">
+        <strong style="font-size:0.85rem">🔑 Sparse Search (BM25)</strong><br>
+        <small>Match keywords "Tesla", "revenue", "2024" → top 20 chunks</small><br>
+        <small style="color:#E85D04">Good for: exact terms & numbers</small>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; font-size:1.5rem; color:#E85D04">→</div>
+
+    <div style="background:white; border-radius:8px; padding:0.75rem; min-width:150px; border:2px solid #F4A261; display:flex; flex-direction:column; justify-content:center">
+      <strong>🔀 Merge Results</strong><br>
+      <small>Combine both lists (up to 40 candidates)<br>using Reciprocal Rank Fusion</small><br>
+      <small style="color:#F4A261; margin-top:0.3rem; display:block">Why: covers both failure modes</small>
+    </div>
+
+  </div>
+
+  <!-- Row 2: Reranker + Parent lookup + LLM -->
+  <div style="display:flex; align-items:stretch; gap:0.75rem; flex-wrap:nowrap; overflow-x:auto">
+
+    <div style="background:white; border-radius:8px; padding:0.75rem; min-width:160px; border:2px solid #C77DFF">
+      <strong>⚖️ Reranker</strong><br>
+      <small>Cross-encoder reads question + each candidate chunk together and scores true relevance.<br><br>
+      40 in → picks best 5<br><br>
+      <em style="color:#C77DFF">Why not just use top-5 from search? Search finds candidates by similarity. Reranker reads them carefully and re-orders. Much more accurate.</em></small>
+    </div>
+
+    <div style="display:flex; align-items:center; font-size:1.5rem; color:#E85D04">→</div>
+
+    <div style="background:white; border-radius:8px; padding:0.75rem; min-width:150px; border:2px solid #2E8B57">
+      <strong>📂 Parent Lookup</strong><br>
+      <small>Each of the top-5 child chunks has a parent_id.<br><br>
+      Retrieve the full parent section (larger context).<br><br>
+      <em style="color:#2E8B57">This is the "retrieve small, pass large" trick. Precision from child, context from parent.</em></small>
+    </div>
+
+    <div style="display:flex; align-items:center; font-size:1.5rem; color:#E85D04">→</div>
+
+    <div style="background:white; border-radius:8px; padding:0.75rem; min-width:140px; border:2px solid #333">
+      <strong>🤖 GPT-4o</strong><br>
+      <small>Receives:<br>• Original question<br>• 5 parent chunks<br><br>
+      Generates a grounded answer using only the retrieved context.</small>
+    </div>
+
+    <div style="display:flex; align-items:center; font-size:1.5rem; color:#E85D04">→</div>
+
+    <div style="background:white; border-radius:8px; padding:0.75rem; min-width:140px; border:2px solid #2E8B57; text-align:center">
+      <div style="font-size:1.3rem">📊</div>
+      <strong>RAGAS</strong><br>
+      <small>Scores the answer:<br>• Was the right chunk found? (retrieval)<br>• Did LLM stick to chunks? (faithfulness)<br>• Is the answer correct? (correctness)</small>
+    </div>
+
+  </div>
+</div>
+
+<!-- Summary table -->
+<div style="margin-top:1.5rem; background:#f8f9fa; border-radius:8px; padding:1rem">
+  <p class="label">What each component teaches you</p>
+  <table style="width:100%; border-collapse:collapse; font-size:0.85em">
+    <tr style="background:#e9ecef">
+      <th style="padding:0.4rem 0.8rem; text-align:left">Component</th>
+      <th style="padding:0.4rem 0.8rem; text-align:left">What you learn</th>
+      <th style="padding:0.4rem 0.8rem; text-align:left">What breaks without it</th>
+    </tr>
+    <tr><td style="padding:0.4rem 0.8rem">Hierarchical chunking</td><td style="padding:0.4rem 0.8rem">Why structure matters</td><td style="padding:0.4rem 0.8rem">Chunks split mid-sentence, context lost</td></tr>
+    <tr style="background:#f1f3f5"><td style="padding:0.4rem 0.8rem">BM25 hybrid</td><td style="padding:0.4rem 0.8rem">Why embeddings alone fail</td><td style="padding:0.4rem 0.8rem">Misses exact terms like "$97.69B", "NACS"</td></tr>
+    <tr><td style="padding:0.4rem 0.8rem">Reranker</td><td style="padding:0.4rem 0.8rem">Difference between similarity vs relevance</td><td style="padding:0.4rem 0.8rem">Wrong chunks passed to LLM despite good search</td></tr>
+    <tr style="background:#f1f3f5"><td style="padding:0.4rem 0.8rem">Parent lookup</td><td style="padding:0.4rem 0.8rem">Retrieve small, pass large</td><td style="padding:0.4rem 0.8rem">LLM gets precise but context-free snippets</td></tr>
+    <tr><td style="padding:0.4rem 0.8rem">RAGAS</td><td style="padding:0.4rem 0.8rem">How to trust your own system</td><td style="padding:0.4rem 0.8rem">No way to know if changes are improvements</td></tr>
+  </table>
+</div>

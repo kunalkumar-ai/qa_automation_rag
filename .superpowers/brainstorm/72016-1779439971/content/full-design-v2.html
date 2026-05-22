@@ -1,0 +1,71 @@
+<h2>Complete System Design v2 — With Tests</h2>
+<p class="subtitle">Updated with unit tests for chunker and retriever pure logic.</p>
+
+<!-- Files -->
+<div class="section" style="background:#f0f4ff; border-radius:10px; padding:1.2rem; margin-bottom:1rem; border-left:4px solid #4A90D9">
+  <h3 style="color:#4A90D9">Files We Will Build</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:0.85em; margin-top:0.5rem">
+    <tr style="background:#e0eaff">
+      <th style="padding:0.4rem 0.8rem; text-align:left">File</th>
+      <th style="padding:0.4rem 0.8rem; text-align:left">Responsibility</th>
+    </tr>
+    <tr><td style="padding:0.4rem 0.8rem"><code>config.py</code></td><td style="padding:0.4rem 0.8rem">All constants — model names, paths, chunk sizes, top-k values</td></tr>
+    <tr style="background:#f0f4ff"><td style="padding:0.4rem 0.8rem"><code>chunker.py</code></td><td style="padding:0.4rem 0.8rem">Hierarchical chunking — parent sections + child paragraphs, each child stores parent_id</td></tr>
+    <tr><td style="padding:0.4rem 0.8rem"><code>ingest.py</code></td><td style="padding:0.4rem 0.8rem">One-time: chunk → embed children → ChromaDB + BM25 index saved to disk</td></tr>
+    <tr style="background:#f0f4ff"><td style="padding:0.4rem 0.8rem"><code>retriever.py</code></td><td style="padding:0.4rem 0.8rem">Dense + BM25 → RRF merge → cross-encoder rerank → parent lookup</td></tr>
+    <tr><td style="padding:0.4rem 0.8rem"><code>generator.py</code></td><td style="padding:0.4rem 0.8rem">GPT-4o: question + 5 parent sections → grounded answer</td></tr>
+    <tr style="background:#f0f4ff"><td style="padding:0.4rem 0.8rem"><code>evaluator.py</code></td><td style="padding:0.4rem 0.8rem">RAGAS: retrieval recall + faithfulness + answer correctness vs golden dataset</td></tr>
+    <tr><td style="padding:0.4rem 0.8rem"><code>logger.py</code></td><td style="padding:0.4rem 0.8rem">Console (human-readable) + JSON file (full trace) per query</td></tr>
+    <tr style="background:#f0f4ff"><td style="padding:0.4rem 0.8rem"><code>query.py</code></td><td style="padding:0.4rem 0.8rem">Entry point: <code>python3 query.py "your question"</code></td></tr>
+    <tr><td style="padding:0.4rem 0.8rem"><code>logs/</code></td><td style="padding:0.4rem 0.8rem">JSON log files, one per run, named by timestamp</td></tr>
+    <tr style="background:#fff3cd; font-weight:bold"><td style="padding:0.4rem 0.8rem">🧪 <code>tests/test_chunker.py</code></td><td style="padding:0.4rem 0.8rem">Unit tests: child-parent links correct, section boundaries respected, no empty chunks</td></tr>
+    <tr style="background:#fff3cd; font-weight:bold"><td style="padding:0.4rem 0.8rem">🧪 <code>tests/test_retriever.py</code></td><td style="padding:0.4rem 0.8rem">Unit tests: RRF merge ranks correctly, handles zero results from one source</td></tr>
+  </table>
+</div>
+
+<!-- Testing philosophy -->
+<div class="section" style="background:#fffbe6; border-radius:10px; padding:1.2rem; margin-bottom:1rem; border-left:4px solid #F4A261">
+  <h3 style="color:#F4A261">Testing Philosophy — What We Test and Why</h3>
+  <div style="display:flex; gap:1rem; margin-top:0.5rem">
+    <div style="flex:1; background:white; border-radius:8px; padding:0.8rem; border:2px solid #2E8B57">
+      <strong style="color:#2E8B57">✅ Unit test these</strong>
+      <ul style="margin-top:0.5rem; font-size:0.85em">
+        <li><strong>Chunker hierarchy</strong> — pure logic, deterministic, everything depends on it being correct</li>
+        <li><strong>RRF merge algorithm</strong> — pure math, no API calls, easy to verify with known inputs</li>
+      </ul>
+    </div>
+    <div style="flex:1; background:white; border-radius:8px; padding:0.8rem; border:2px solid #E85D04">
+      <strong style="color:#E85D04">❌ Don't mock these</strong>
+      <ul style="margin-top:0.5rem; font-size:0.85em">
+        <li><strong>Reranker</strong> — mocking gives no signal about actual relevance scoring</li>
+        <li><strong>ChromaDB</strong> — mock retrieval tells you nothing about real embedding quality</li>
+        <li><strong>GPT-4o</strong> — mock answers can't test faithfulness or correctness</li>
+      </ul>
+    </div>
+  </div>
+  <div style="margin-top:0.8rem; background:white; border-radius:8px; padding:0.8rem; border:2px solid #4A90D9">
+    <strong style="color:#4A90D9">🎯 The real integration test</strong>
+    <p style="font-size:0.85em; margin-top:0.3rem">Running all 20 golden dataset questions through the full pipeline and measuring RAGAS scores. This catches real failures that mocks never would.</p>
+  </div>
+</div>
+
+<!-- Pipeline unchanged -->
+<div class="section" style="background:#fff8f0; border-radius:10px; padding:1.2rem; margin-bottom:1rem; border-left:4px solid #E85D04">
+  <h3 style="color:#E85D04">Full Query Pipeline (unchanged)</h3>
+  <div style="font-family:monospace; font-size:0.85em; background:#fff; padding:1rem; border-radius:6px; margin-top:0.5rem; line-height:2">
+    python3 query.py "What was Tesla's revenue in 2024?"<br>
+    &nbsp;&nbsp;→ <span style="color:#7B68EE">Dense search</span>: ChromaDB top-20 by cosine similarity<br>
+    &nbsp;&nbsp;→ <span style="color:#E85D04">BM25 search</span>: keyword match top-20<br>
+    &nbsp;&nbsp;→ <span style="color:#F4A261">RRF merge</span>: combine both → 40 candidates<br>
+    &nbsp;&nbsp;→ <span style="color:#C77DFF">Reranker</span>: cross-encoder → keeps top-5<br>
+    &nbsp;&nbsp;→ <span style="color:#2E8B57">Parent lookup</span>: child chunks → full parent sections<br>
+    &nbsp;&nbsp;→ <span style="color:#333">GPT-4o</span>: question + 5 parent sections → answer<br>
+    &nbsp;&nbsp;→ <span style="color:#4A90D9">RAGAS</span>: retrieval + faithfulness + correctness<br>
+    &nbsp;&nbsp;→ <span style="color:#666">Logger</span>: console + logs/ JSON
+  </div>
+</div>
+
+<div style="padding:1rem; background:#f0fff4; border-radius:8px; border-left:4px solid #2E8B57; margin-top:0.5rem">
+  <p class="label">Ready to write spec?</p>
+  <p>If this design looks right, the next step is writing the formal spec document to <code>docs/superpowers/specs/2026-05-22-tesla-rag-design.md</code></p>
+</div>
