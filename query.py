@@ -40,8 +40,17 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python3 query.py 'your question here'")
         print("       python3 query.py 'question' 'expected answer'")
+        print("       python3 query.py --all")
         sys.exit(1)
 
-    q  = sys.argv[1]
-    gt = sys.argv[2] if len(sys.argv) > 2 else None
-    query(q, gt)
+    if sys.argv[1] == "--all":
+        from evaluator import parse_golden_dataset
+        pairs = parse_golden_dataset()
+        print(f"\nRunning all {len(pairs)} questions (no RAGAS)...\n")
+        for i, pair in enumerate(pairs, 1):
+            print(f"[{i:02d}/{len(pairs)}] {pair['question']}")
+            query(pair["question"])
+    else:
+        q  = sys.argv[1]
+        gt = sys.argv[2] if len(sys.argv) > 2 else None
+        query(q, gt)
