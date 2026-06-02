@@ -11,7 +11,11 @@ def query(question: str, ground_truth: str | None = None) -> str:
     If ground_truth is provided, RAGAS scores are computed and logged.
     """
     retrieval = retrieve(question)
-    answer = generate_answer(question, retrieval["parent_texts"])
+    chunk_metas = [
+        {"year": c["year"], "company": c["company"], "section_name": c["section_name"], "parent_id": c.get("parent_id", "")}
+        for c in retrieval["top_child_chunks"]
+    ]
+    answer = generate_answer(question, retrieval["parent_texts"], chunk_metas=chunk_metas)
 
     ragas_scores: dict = {}
     if ground_truth:
@@ -24,6 +28,7 @@ def query(question: str, ground_truth: str | None = None) -> str:
 
     log_query({
         "question": question,
+        "route": retrieval.get("route", {}),
         "top_child_chunks": retrieval["top_child_chunks"],
         "parent_texts": retrieval["parent_texts"],
         "answer": answer,
