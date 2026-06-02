@@ -1,0 +1,141 @@
+THESIS DISCUSSION NOTES
+Date: 2026-05-30
+=====================================================
+
+CONTEXT
+-------
+Master thesis at a defense company.
+Goal: Build a POC system to automate customer questionnaire responses.
+University also requires a research contribution.
+
+THE PROBLEM
+-----------
+- Defense company receives repetitive compliance questionnaires (e.g. "are you ISO certified?", "are you environment compliant?")
+- Currently answered manually
+- 500 real questionnaires already exist — questions + answers
+- New/unknown questions should escalate to a human
+- Auditability is a hard requirement (defense sector)
+- Dual language: English and German (company requirement)
+
+WHY NOT PLAIN RAG
+-----------------
+- Questions are static and policy-type — each maps to one answer
+- A simple FAQ lookup outperforms RAG here
+- RAG earns its complexity when answers require synthesizing across documents
+- Key insight: copy-paste from approved source is safer than generation in defense
+  (no hallucination risk, fully auditable, answer is exactly what a human approved)
+
+THE ROUTING LOGIC (rough)
+--------------------------
+- Confidence >= 80%  → auto-answer (copy-paste from QnA database)
+- Confidence 60-80%  → suggest 3 candidate answers, human picks and sends
+- Confidence < 60%   → escalate directly to human
+
+CORE PROBLEM WITH THIS APPROACH
+--------------------------------
+Setting thresholds at 60/80% is an engineering decision, not research.
+The research question is: do similarity scores actually predict answer correctness?
+A chunk can score 85% similar but be subtly wrong for the customer's specific context.
+In defense, confidently wrong is worse than "I don't know."
+
+CANDIDATE RESEARCH DIRECTIONS
+------------------------------
+
+Direction 1 — Confidence Calibration (STRONGEST)
+  Research question: How do you calibrate confidence thresholds in an answer-selection
+  system so they actually predict correctness — not just semantic similarity — in a
+  high-stakes, auditable, bilingual setting?
+
+  Key concept: Conformal Prediction — a statistical framework that gives rigorous,
+  calibrated confidence measures with coverage guarantees (not just a guess).
+
+  Gap: Most calibration papers assume the model *generates* an answer. Your system
+  *selects* a pre-approved one. That's a meaningfully different problem.
+
+  Papers to read:
+  - ICLR 2025: Conformal Language Model Reasoning
+    https://openreview.net/pdf?id=AJpUZd8Clb
+  - QA-Calibration of LM Confidence Scores (2024)
+    https://arxiv.org/pdf/2410.06615
+  - Response Quality Assessment for RAG via Conformal Factuality
+    https://arxiv.org/html/2506.20978
+  - Bayesian RAG: Uncertainty-Aware Retrieval for Financial QA
+    https://www.frontiersin.org/journals/artificial-intelligence/articles/10.3389/frai.2025.1668172/full
+
+Direction 2 — Out-of-Distribution (OOD) Detection
+  Research question: How do you reliably detect that an incoming question is genuinely
+  outside your QnA database, not just a paraphrase of something you know?
+
+  Why it matters: A false negative (system thinks it knows but it doesn't) is dangerous
+  in defense. Current OOD methods may be answering the wrong question (2025 paper).
+
+  Papers to read:
+  - Out-of-Distribution Detection Methods Answer the Wrong Questions (2025)
+    https://arxiv.org/abs/2507.01831
+  - A Survey on Out-of-Distribution Detection in NLP
+    https://arxiv.org/pdf/2305.03236
+
+Direction 3 — Answer Attribution and Grounding
+  Research question: How do you prove sentence-level provenance for every answer
+  in a copy-paste QnA system in a regulated domain?
+
+  Why it matters: Auditability = not just "we retrieved chunk X" but "this exact
+  sentence in document Y version Z is the source." Auditors need this months later.
+
+  Papers to read:
+  - Model Internals-based Answer Attribution for Trustworthy RAG (2024)
+    https://arxiv.org/pdf/2406.13663
+  - Post-Hoc Answer Attribution for Long Document Comprehension (2024)
+    https://arxiv.org/pdf/2406.06938
+
+Direction 4 — System Comparison (most feasible for POC)
+  Research question: Which approach (pure retrieval vs RAG vs answer selection)
+  best balances accuracy + auditability for defense compliance questionnaires?
+
+  Most feasible for a thesis that also needs a working system.
+  Less publishable than Directions 1-3 but practically strong.
+
+RECOMMENDED DIRECTION
+---------------------
+Direction 1 (calibration) + elements of Direction 2 (OOD/escalation) combined.
+The bilingual (EN/DE) + defense/auditability context is the specific angle
+that could make it novel even if calibration itself is studied.
+
+EVALUATION PLAN
+---------------
+- Extract 500 real questionnaires (questions + answers)
+- Build golden dataset: ~50-100 held-out questions with known correct answers
+  across both EN and DE
+- Metrics: accuracy, calibration error, escalation rate, auditability trace quality
+- Split: training/validation set for threshold calibration, held-out test set for final eval
+
+WHAT TO DO NEXT (in order)
+---------------------------
+1. Literature review — 2 weeks minimum
+   Databases: Google Scholar, IEEE Xplore, ACM Digital Library, arXiv
+   Search terms:
+     - "confidence calibration retrieval question answering"
+     - "conformal prediction QA"
+     - "out-of-distribution detection NLP escalation"
+     - "answer attribution grounding compliance"
+     - "FAQ automation defense high-stakes"
+     - "bilingual retrieval calibration"
+
+   Build a table: paper | what it does | what gap remains
+   That table proves novelty to your supervisor.
+
+2. Present 2-3 candidate research questions to supervisor, backed by the table.
+
+3. Only then: design the system architecture.
+
+4. Only then: write code.
+
+KEY INSIGHT FROM THIS CONVERSATION
+------------------------------------
+The RAG project (Tesla 10-K) was perfect preparation. You now understand
+retrieval, chunking, reranking, and evaluation from the inside — including
+WHY things fail (vocabulary gap, chunk dilution, wrong data source).
+That practical knowledge is directly applicable to the thesis system.
+
+The thesis problem is simpler than Tesla RAG in retrieval (fixed QnA database,
+not a 473K char document), but harder in auditability and calibration requirements.

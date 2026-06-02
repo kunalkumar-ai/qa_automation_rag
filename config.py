@@ -15,9 +15,19 @@ RERANKER_MODEL = "BAAI/bge-reranker-v2-m3"
 CHROMA_PATH = "chroma_db"
 BM25_INDEX_PATH = "bm25_index.pkl"
 PARENTS_PATH = "parents.pkl"
-TESLA_DOC_PATH = "tesla_doc/tsla-10k-2024.txt"
 GOLDEN_DATASET_PATH = "tesla_doc/golden_dataset.md"
 LOGS_DIR = "logs"
+
+# Document registry — each entry is one 10-K filing
+# Add new companies or years here; ingest.py and router.py read from this list
+DOCUMENTS = [
+    {"company": "tesla", "year": "2022", "path": "tesla_doc/tsla-10k-2022.txt"},
+    {"company": "tesla", "year": "2023", "path": "tesla_doc/tsla-10k-2023.txt"},
+    {"company": "tesla", "year": "2024", "path": "tesla_doc/tsla-10k-2024.txt"},
+]
+
+AVAILABLE_COMPANIES = list({d["company"] for d in DOCUMENTS})
+AVAILABLE_YEARS = sorted({d["year"] for d in DOCUMENTS})
 
 # Retrieval parameters
 TOP_K_DENSE = 20
