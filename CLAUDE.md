@@ -57,14 +57,14 @@ For each document in DOCUMENTS registry (company + year + path):
   → Build unified BM25 keyword index (all child chunks across all documents)
 ```
 
-**Query (runs every question):**
+**Single question query (query.py):**
 ```
 Question
   → Router (GPT-4o-mini) — decides which companies + years to search
   → Dense search (ChromaDB, top 30, filtered by company+year)    ┐
   → Sparse search (BM25, top 30, filtered by company+year)       ┘ run in parallel
   → Merge with Reciprocal Rank Fusion → ~55 candidates
-  → Reranker (cross-encoder, dynamic top-k):
+  → Reranker (cross-encoder, top 20 RRF candidates, dynamic top-k):
       1 year  → pick best 5
       2 years → pick best 7
       3 years → pick best 9
@@ -73,6 +73,18 @@ Question
       — each context block labeled: [Source: Tesla 2022 10-K — Section Name]
   → RAGAS evaluation (retrieval score + faithfulness + correctness)
   → Two-level logging (console + JSON trace)
+```
+
+**Conversational query (chat.py):**
+```
+User message
+  → Rewriter (GPT-4o-mini) — resolves pronouns/references using last 3 turns
+      e.g. "which of those were new?" → "which Tesla 2024 risks were not in 2023?"
+      — if no history (first question), returned unchanged, no LLM call
+  → Standalone question enters the same retrieval pipeline above
+  → Answer printed to console
+  → Turn stored in sliding window history (deque maxlen=3)
+  → JSON log includes: original question, rewritten question, history_length, history Q&As
 ```
 
 ## Key Decisions
@@ -109,7 +121,16 @@ Fixed top-5 was too small for 3-year queries — one irrelevant chunk could disp
 Each parent section passed to GPT-4o is labeled `[Source: Tesla 2022 10-K — Section]`. Without labels, GPT-4o cannot attribute numbers to years in cross-document answers.
 
 **Reranker after hybrid search**
-Cross-encoder reads question + each candidate together, scoring true relevance. We retrieve ~55 candidates, rerank all, keep dynamic top-k. Using local `BAAI/bge-reranker-v2-m3` — inspectable scores are more valuable for learning than marginal accuracy from a cloud API.
+Cross-encoder reads question + each candidate together, scoring true relevance. RRF merges ~55 candidates — reranker scores only the top 20 (bottom 35 are too low-ranked by RRF to matter). Capping at 20 cuts CPU time significantly without accuracy loss. Using local `BAAI/bge-reranker-v2-m3` — inspectable scores are more valuable for learning than marginal accuracy from a cloud API.
+
+**Conversational memory: sliding window of last 3 turns**
+Each turn in chat.py is stored as `{"question": ..., "answer": ...}` in a `deque(maxlen=3)`. The deque automatically drops the oldest turn when a 4th is added — no manual trimming. Last 3 turns covers almost all real follow-up patterns. The original user question (not the rewritten one) is stored in history so future rewriting sees natural language references, not system-generated text.
+
+**Query rewriting for conversational RAG**
+Before retrieval, GPT-4o-mini receives the conversation history + follow-up question and returns a standalone question with all pronouns and references resolved. If history is empty (first question), the function returns immediately with no LLM call. Temperature=0.0 — rewriting must be deterministic. Falls back to original question on any failure so the pipeline never breaks.
+
+**Model cost routing**
+Structural tasks (routing, rewriting) use GPT-4o-mini ($0.15/M tokens). Only the final answer generation uses GPT-4o ($2.50/M tokens). The reranker runs locally at zero API cost. `ROUTING_MODEL` and `GENERATION_MODEL` are defined separately in config.py.
 
 **Retrieve small, pass large (parent lookup)**
 Child chunks retrieved for precision. Parent sections passed to GPT-4o for context. Precision from child, reasoning context from parent. Deduplication by parent_id prevents sending the same section twice.
@@ -150,8 +171,10 @@ For maximum accuracy on multi-year queries, query decomposition (one sub-query p
 | `generator.py` | GPT-4o with labeled context blocks (year + section per chunk) → answer |
 | `evaluator.py` | RAGAS scoring — retrieval recall, faithfulness, answer correctness |
 | `logger.py` | Two-level logging — console + JSON trace per query |
-| `query.py` | Entry point: `python3 query.py "your question"` |
-| `logs/` | JSON log files, one per query, named by timestamp |
+| `rewriter.py` | GPT-4o-mini rewrites follow-up questions into standalone questions using conversation history |
+| `chat.py` | Interactive conversational loop — sliding window memory (last 3 turns), calls rewriter before retrieval |
+| `query.py` | Single-question entry point: `python3 query.py "your question"` |
+| `logs/` | JSON log files, one per query — chat logs include rewritten question + history |
 | `tests/test_chunker.py` | Unit tests: hierarchy correct, child-parent links valid |
 | `tests/test_retriever.py` | Unit tests: RRF ranking correct, handles zero results |
 
@@ -169,4 +192,9 @@ python3 query.py "How did Tesla gross margin change from 2022 to 2024?"
 
 # With ground truth for RAGAS scoring
 python3 query.py "question" "expected answer"
+
+# Conversational mode — supports follow-up questions
+python3 chat.py
+# Then type questions interactively
+# Commands: 'exit' to quit | 'clear' to reset conversation history
 ```
