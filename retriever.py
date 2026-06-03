@@ -142,9 +142,10 @@ def retrieve(question: str) -> dict:
     # ensures enough context slots for GPT-4o without forcing non-relevant chunks
     top_k = TOP_K_RERANK + max(0, (len(years) - 1) * 2)
 
-    pairs = [[question, all_texts[cid]] for cid in valid_ids]
+    rerank_candidates = valid_ids[:20]
+    pairs = [[question, all_texts[cid]] for cid in rerank_candidates]
     rerank_scores_list = reranker.predict(pairs)
-    reranked = sorted(zip(valid_ids, rerank_scores_list), key=lambda x: x[1], reverse=True)
+    reranked = sorted(zip(rerank_candidates, rerank_scores_list), key=lambda x: x[1], reverse=True)
     top_ids = [cid for cid, _ in reranked[:top_k]]
     rerank_score_map = {cid: float(score) for cid, score in reranked}
 
