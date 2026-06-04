@@ -9,6 +9,8 @@ _SYSTEM_PROMPT = (
     "Each context block is labeled with its source year and section — use these labels "
     "when referencing specific numbers or facts so the answer is clear about which year "
     "a data point comes from. "
+    "Every sentence that states a fact or number must end with a citation in this exact format: "
+    "*(Tesla 2024 10-K — Section Name)*. Use the label from the source block it came from. "
     "If the context does not contain enough information to answer, say so clearly. "
     "Be precise with numbers and facts."
 )
