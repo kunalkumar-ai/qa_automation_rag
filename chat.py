@@ -3,6 +3,7 @@ from retriever import retrieve
 from generator import generate_answer
 from rewriter import rewrite_query
 from logger import log_query
+from config import CONFIDENCE_THRESHOLD
 
 _MAX_HISTORY = 3
 
@@ -54,6 +55,10 @@ def chat():
             }
             for c in retrieval["top_child_chunks"]
         ]
+        top_score = max((c["reranker_score"] for c in retrieval["top_child_chunks"]), default=None)
+        if top_score is not None and top_score < CONFIDENCE_THRESHOLD:
+            print(f"⚠️  Low confidence — best reranker score: {top_score:.2f}. Answer may not be accurate.\n")
+
         answer = generate_answer(standalone, retrieval["parent_texts"], chunk_metas=chunk_metas)
 
         print(f"\nAssistant: {answer}\n")

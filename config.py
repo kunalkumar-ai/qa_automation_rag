@@ -34,5 +34,6 @@ TOP_K_DENSE = 30
 TOP_K_BM25 = 30
 TOP_K_RERANK = 5       # base value — retriever scales this up for multi-year queries
 RRF_K = 60
+CONFIDENCE_THRESHOLD = 0.4     # top reranker score below this triggers a low-confidence warning
 GENERATION_TEMPERATURE = 0.3
 MAX_CONTEXT_CHARS = 3000  # max chars per parent section sent to GPT-4o

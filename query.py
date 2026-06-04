@@ -3,6 +3,14 @@ from retriever import retrieve
 from generator import generate_answer
 from evaluator import evaluate_single
 from logger import log_query
+from config import CONFIDENCE_THRESHOLD
+
+
+def _check_confidence(top_chunks: list[dict]) -> float | None:
+    """Return the top reranker score, or None if no chunks."""
+    if not top_chunks:
+        return None
+    return max(c["reranker_score"] for c in top_chunks)
 
 
 def query(question: str, ground_truth: str | None = None) -> str:
@@ -15,6 +23,10 @@ def query(question: str, ground_truth: str | None = None) -> str:
         {"year": c["year"], "company": c["company"], "section_name": c["section_name"], "parent_id": c.get("parent_id", "")}
         for c in retrieval["top_child_chunks"]
     ]
+    top_score = _check_confidence(retrieval["top_child_chunks"])
+    if top_score is not None and top_score < CONFIDENCE_THRESHOLD:
+        print(f"⚠️  Low confidence — best reranker score: {top_score:.2f}. Answer may not be accurate.\n")
+
     answer = generate_answer(question, retrieval["parent_texts"], chunk_metas=chunk_metas)
 
     ragas_scores: dict = {}
