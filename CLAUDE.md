@@ -68,9 +68,11 @@ Question
       1 year  → pick best 5
       2 years → pick best 7
       3 years → pick best 9
+  → Confidence check: if top reranker score < 0.4 → print ⚠️ warning
   → Parent lookup (swap child chunks for full parent sections)
   → GPT-4o (question + labeled parent sections → answer)
       — each context block labeled: [Source: Tesla 2022 10-K — Section Name]
+      — every fact cited inline: *(Tesla 2024 10-K — Section Name)*
   → RAGAS evaluation (retrieval score + faithfulness + correctness)
   → Two-level logging (console + JSON trace)
 ```
@@ -82,7 +84,8 @@ User message
       e.g. "which of those were new?" → "which Tesla 2024 risks were not in 2023?"
       — if no history (first question), returned unchanged, no LLM call
   → Standalone question enters the same retrieval pipeline above
-  → Answer printed to console
+  → Confidence check: same ⚠️ warning if top reranker score < 0.4
+  → Answer printed to console with inline citations
   → Turn stored in sliding window history (deque maxlen=3)
   → JSON log includes: original question, rewritten question, history_length, history Q&As
 ```
@@ -131,6 +134,12 @@ Before retrieval, GPT-4o-mini receives the conversation history + follow-up ques
 
 **Model cost routing**
 Structural tasks (routing, rewriting) use GPT-4o-mini ($0.15/M tokens). Only the final answer generation uses GPT-4o ($2.50/M tokens). The reranker runs locally at zero API cost. `ROUTING_MODEL` and `GENERATION_MODEL` are defined separately in config.py.
+
+**Inline citations in answers**
+GPT-4o is instructed in the system prompt to end every factual sentence with a citation in the format *(Tesla 2024 10-K — Section Name)*. The source label is already on each context block — the prompt just tells GPT-4o to copy it into the answer. Finance teams can trace every number back to the exact section without reading the full filing.
+
+**Confidence signal**
+Before generating an answer, `query.py` and `chat.py` check the top reranker score from `retrieval["top_child_chunks"]`. If it is below `CONFIDENCE_THRESHOLD = 0.4` (set in config.py), a ⚠️ warning is printed. The answer is still generated — the signal is informational, not a hard stop. Prevents silent wrong answers on questions the documents don't cover. Reranker score threshold (hard cut) was evaluated and rejected — it reduced context and hurt answer quality on financial documents.
 
 **Retrieve small, pass large (parent lookup)**
 Child chunks retrieved for precision. Parent sections passed to GPT-4o for context. Precision from child, reasoning context from parent. Deduplication by parent_id prevents sending the same section twice.
